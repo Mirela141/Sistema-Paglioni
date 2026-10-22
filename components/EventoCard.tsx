@@ -1,12 +1,17 @@
-interface Evento {
+'use client';
+
+export interface Evento {
   id: number;
-  nome?: string;
   titulo?: string;
-  title?: string;
+  nome?: string;
+  descricao?: string;
+  data_evento?: string;
+  local?: string;
   vagas: number;
+  categoria?: string;
 }
 
-interface Participante {
+export interface Participante {
   id: number;
   nome: string;
   email?: string;
@@ -15,107 +20,124 @@ interface Participante {
 
 interface EventoCardProps {
   evento: Evento;
-  inscritos?: Participante[];
+  inscritos: Participante[];
 }
 
-export default function EventoCard({ evento, inscritos = [] }: EventoCardProps) {
-  // Pega nome, titulo ou title (evita ficar em branco se a API usar outro nome de campo)
-  const nomeEvento = evento?.nome || evento?.titulo || evento?.title || `Evento #${evento.id}`;
-  const temVagas = evento.vagas > 0;
-  const maxVagas = 30;
-  const porcentagemPreenchida = Math.min(100, Math.max(0, ((maxVagas - evento.vagas) / maxVagas) * 100));
+export default function EventoCard({ evento, inscritos }: EventoCardProps) {
+  const titulo = evento.titulo || evento.nome || 'Evento sem título';
+
+  // Formata a data vinda do MySQL (Ex: 10/11/2026 19:00)
+  const dataFormatada = evento.data_evento
+    ? new Date(evento.data_evento).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : null;
+
+  const vagasRestantes = evento.vagas;
+  const totalInscritos = inscritos.length;
+  const temVagas = vagasRestantes > 0;
 
   return (
-    <div className="card-interactive" style={{
-      backgroundColor: '#ffffff',
-      borderRadius: '16px',
-      padding: '24px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-      border: '1px solid #e2e8f0',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '18px',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* Indicador Lateral */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '5px',
-        height: '100%',
-        backgroundColor: temVagas ? '#005693' : '#ef4444'
-      }} />
-
+    <div
+      className="card-interactive"
+      style={{
+        backgroundColor: '#ffffff',
+        borderRadius: '16px',
+        border: '1px solid #e2e8f0',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+      }}
+    >
       <div>
-        {/* Título do Evento e Status */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-          <h4 style={{ margin: 0, fontSize: '1.15rem', color: '#0f172a', fontWeight: 700, lineHeight: 1.3 }}>
-            {nomeEvento}
-          </h4>
-          <span style={{
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            padding: '4px 10px',
-            borderRadius: '20px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.03em',
-            backgroundColor: temVagas ? '#ecfdf5' : '#fef2f2',
-            color: temVagas ? '#047857' : '#b91c1c',
-            whiteSpace: 'nowrap'
-          }}>
-            {temVagas ? 'Aberto' : 'Esgotado'}
+        {/* Cabeçalho do Card: Categoria e Status de Vagas */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          {evento.categoria ? (
+            <span
+              style={{
+                backgroundColor: '#e0f2fe',
+                color: '#0369a1',
+                padding: '4px 10px',
+                borderRadius: '20px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                textTransform: 'uppercase'
+              }}
+            >
+              🏷️ {evento.categoria}
+            </span>
+          ) : <span />}
+
+          <span
+            style={{
+              backgroundColor: temVagas ? '#dcfce7' : '#fee2e2',
+              color: temVagas ? '#15803d' : '#b91c1c',
+              padding: '4px 10px',
+              borderRadius: '20px',
+              fontSize: '0.75rem',
+              fontWeight: 700
+            }}
+          >
+            {temVagas ? 'ABERTO' : 'ESGOTADO'}
           </span>
         </div>
 
-        {/* Barra de Progresso */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#64748b', marginBottom: '6px' }}>
-            <span>Ocupação</span>
-            <span style={{ fontWeight: 600, color: temVagas ? '#0f172a' : '#ef4444' }}>
-              {evento.vagas} vaga(s) restante(s)
-            </span>
-          </div>
-          <div style={{ width: '100%', height: '6px', backgroundColor: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%',
-              width: `${porcentagemPreenchida}%`,
-              backgroundColor: temVagas ? '#005693' : '#ef4444',
-              borderRadius: '3px',
-              transition: 'width 0.4s ease'
-            }} />
+        {/* Título do Evento */}
+        <h3 style={{ margin: '0 0 10px 0', fontSize: '1.25rem', color: '#0f172a', fontWeight: 800 }}>
+          {titulo}
+        </h3>
+
+        {/* Descrição do Banco de Dados */}
+        {evento.descricao && (
+          <p style={{ margin: '0 0 16px 0', color: '#64748b', fontSize: '0.9rem', lineHeight: '1.5' }}>
+            {evento.descricao}
+          </p>
+        )}
+
+        {/* Informações de Data, Local e Vagas */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', fontSize: '0.88rem', color: '#334155' }}>
+          {dataFormatada && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>📅</span>
+              <span><strong>Data:</strong> {dataFormatada}</span>
+            </div>
+          )}
+          
+          {evento.local && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>📍</span>
+              <span><strong>Local:</strong> {evento.local}</span>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>🎟️</span>
+            <span><strong>Vagas disponíveis:</strong> {vagasRestantes}</span>
           </div>
         </div>
       </div>
 
-      {/* Lista de Participantes Inscritos */}
-      <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
-            👥 Inscritos ({inscritos.length}):
-          </span>
+      {/* Seção de Participantes Inscritos */}
+      <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '16px', marginTop: '12px' }}>
+        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: '8px' }}>
+          👥 Inscritos ({totalInscritos})
         </div>
 
-        {inscritos.length === 0 ? (
-          <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>
-            Nenhum inscrito até o momento.
-          </p>
+        {totalInscritos === 0 ? (
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>
+            Nenhum inscrito ainda.
+          </span>
         ) : (
-          <ul style={{
-            margin: 0,
-            paddingLeft: '18px',
-            fontSize: '0.85rem',
-            color: '#475569',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
-            maxHeight: '100px',
-            overflowY: 'auto'
-          }}>
-            {inscritos.map((p) => (
-              <li key={p.id}>
-                <strong style={{ color: '#0f172a' }}>{p.nome}</strong> {p.turma ? `(${p.turma})` : ''}
+          <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.85rem', color: '#334155' }}>
+            {inscritos.map((p, index) => (
+              <li key={p.id || index} style={{ marginBottom: '4px' }}>
+                {p.nome} {p.turma ? `(${p.turma})` : ''}
               </li>
             ))}
           </ul>
